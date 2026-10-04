@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Secondary Surgical Intervention Risk — Nomogram Calculator</title>
+<style>
+  :root{--ink:#12211c;--paper:#f6f4ee;--line:#c9c2b2;--navy:#1f4e79;--navy-soft:#3d6d97;--clay:#a4442f;--clay-soft:#c96a52;--muted:#6b6455;--grid:#e4dfd2;}
+  *{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--paper);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:940px;margin:0 auto;padding:38px 26px 70px;}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--clay);margin:0 0 10px;}
+  h1{font-size:clamp(24px,4vw,37px);line-height:1.1;font-weight:600;margin:0 0 12px;letter-spacing:-.01em;}
+  .sub{color:var(--muted);font-size:16px;max-width:62ch;margin:0 0 6px;}
+  .flag{display:inline-block;margin-top:14px;padding:5px 12px;border:1px solid var(--clay);border-radius:2px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--clay);background:rgba(164,68,47,.05);}
+  .rule{height:1px;background:var(--line);margin:28px 0;border:0;}
+  .grid2{display:grid;grid-template-columns:1fr;gap:28px;}
+  @media(min-width:760px){.grid2{grid-template-columns:1.05fr .95fr;gap:44px;}}
+  .panel-title{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 18px;display:flex;align-items:center;gap:10px;}
+  .panel-title::after{content:"";flex:1;height:1px;background:var(--grid);}
+  .field{margin-bottom:22px;}
+  .field-label{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;margin-bottom:9px;}
+  .field-label .pts{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--navy);}
+  .toggle{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .toggle button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;padding:11px 8px;font-family:inherit;font-size:14px;color:var(--muted);transition:background .15s,color .15s;}
+  .toggle button+button{border-left:1px solid var(--line);}
+  .toggle button[aria-pressed="true"]{background:var(--navy);color:#fff;}
+  .toggle button:focus-visible{outline:2px solid var(--clay);outline-offset:-2px;}
+  .slider-row{display:flex;align-items:center;gap:14px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:3px;background:var(--line);border-radius:2px;flex:1;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--navy);cursor:pointer;border:3px solid var(--paper);box-shadow:0 0 0 1px var(--navy);}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--navy);cursor:pointer;border:3px solid var(--paper);box-shadow:0 0 0 1px var(--navy);}
+  .bmi-val{font-family:"IBM Plex Mono",monospace;font-size:18px;min-width:56px;text-align:right;}
+  .bmi-cat{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);}
+  .result{background:var(--ink);color:var(--paper);border-radius:5px;padding:30px 28px;position:sticky;top:20px;}
+  .result .rlabel{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b9b09c;margin:0 0 6px;}
+  .risk-num{font-size:60px;font-weight:600;line-height:1;letter-spacing:-.02em;margin:2px 0;}
+  .risk-num .pct{font-size:28px;color:#b9b09c;}
+  .risk-band{font-family:"IBM Plex Mono",monospace;font-size:12px;margin-bottom:20px;}
+  .meter{height:9px;border-radius:5px;background:#2c3d37;overflow:hidden;margin-bottom:8px;}
+  .meter-fill{height:100%;width:0;background:linear-gradient(90deg,var(--navy-soft),var(--clay-soft));transition:width .35s cubic-bezier(.2,.7,.2,1);}
+  .meter-scale{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:10px;color:#8a8271;margin-bottom:22px;}
+  .breakdown{border-top:1px solid #2c3d37;padding-top:16px;}
+  .brow{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:#d9d3c4;}
+  .brow .bv{font-family:"IBM Plex Mono",monospace;color:var(--paper);}
+  .brow.total{border-top:1px solid #2c3d37;margin-top:8px;padding-top:12px;font-size:14px;color:var(--paper);}
+  .note{font-size:13px;color:var(--muted);margin-top:26px;line-height:1.6;}
+  .note strong{color:var(--ink);font-weight:600;}
+  code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:var(--grid);padding:1px 5px;border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Radiation Oncology · Implant Reconstruction</p>
+  <h1>Predicted risk of secondary surgical intervention after SSM, implant reconstruction and PMRT</h1>
+  <p class="sub">Composite outcome: capsulotomy, capsulectomy, or implant removal. Enter the four pre-specified factors; predicted risk updates from the fitted model.</p>
+  <span class="flag">N=286 · 51 events · corrected AUC 0.66 · validate externally</span>
+  <p class="sub" style="font-size:13px;margin-top:10px">King Hussein Cancer Center · Abstract 409, 4th KHCC Research Conference 2026 · For research and counselling discussion only, not for individual treatment decisions.</p>
+  <hr class="rule">
+  <div class="grid2">
+    <section>
+      <p class="panel-title">Patient factors</p>
+      <div class="field">
+        <div class="field-label"><span>Surgical site infection before RT</span><span class="pts" id="pts-ssi">0 pts</span></div>
+        <div class="toggle" role="group" aria-label="Surgical site infection">
+          <button id="ssi-no" aria-pressed="true" onclick="setSSI(0)">No</button>
+          <button id="ssi-yes" aria-pressed="false" onclick="setSSI(1)">Yes</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Adjuvant chemotherapy</span><span class="pts" id="pts-adj">0 pts</span></div>
+        <div class="toggle" role="group" aria-label="Adjuvant chemotherapy">
+          <button id="adj-no" aria-pressed="true" onclick="setADJ(0)">No</button>
+          <button id="adj-yes" aria-pressed="false" onclick="setADJ(1)">Yes</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Delayed wound healing (&gt;6 wks)</span><span class="pts" id="pts-dh">0 pts</span></div>
+        <div class="toggle" role="group" aria-label="Delayed wound healing">
+          <button id="dh-no" aria-pressed="true" onclick="setDH(0)">No</button>
+          <button id="dh-yes" aria-pressed="false" onclick="setDH(1)">Yes</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Body mass index</span><span class="pts" id="pts-bmi">0 pts</span></div>
+        <div class="slider-row">
+          <input type="range" id="bmi" min="18" max="53" step="0.5" value="28" aria-label="BMI" oninput="update()">
+          <span class="bmi-val"><span id="bmi-val">28</span></span>
+        </div>
+        <div class="bmi-cat" id="bmi-cat">overweight</div>
+      </div>
+    </section>
+    <section>
+      <div class="result">
+        <p class="rlabel">Predicted risk</p>
+        <div class="risk-num"><span id="risk">12</span><span class="pct">%</span></div>
+        <div class="risk-band" id="band">— low</div>
+        <div class="meter"><div class="meter-fill" id="fill"></div></div>
+        <div class="meter-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span></div>
+        <div class="breakdown">
+          <div class="brow"><span>Surgical site infection</span><span class="bv" id="bd-ssi">0</span></div>
+          <div class="brow"><span>Adjuvant chemotherapy</span><span class="bv" id="bd-adj">0</span></div>
+          <div class="brow"><span>Delayed healing</span><span class="bv" id="bd-dh">0</span></div>
+          <div class="brow"><span>BMI</span><span class="bv" id="bd-bmi">0</span></div>
+          <div class="brow total"><span>Total points</span><span class="bv" id="bd-total">0</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="note">
+    <strong>Model.</strong> Logistic regression on 286 patients (51 events). Linear predictor
+    <code>&minus;0.819 + 1.363·SSI + 0.938·adjuvant&nbsp;chemo + 0.706·delayed&nbsp;healing &minus; 0.0405·BMI</code>;
+    risk = <code>1/(1+e<sup>&minus;LP</sup>)</code>. Predictors pre-specified a priori. Delayed healing and BMI
+    were retained by design but were not independently significant; implant plane was assessed separately and not predictive.
+    Optimism-corrected AUC 0.66. <strong>External validation is recommended before clinical use.</strong>
+  </p>
+</div>
+<script>
+  const B0=-0.8185, B_SSI=1.3625, B_ADJ=0.9379, B_DH=0.7057, B_BMI=-0.0405;
+  const BMI_MIN=18, BMI_MAX=53;
+  const spanSSI=Math.abs(B_SSI), spanADJ=Math.abs(B_ADJ), spanDH=Math.abs(B_DH), spanBMI=Math.abs(B_BMI*(BMI_MAX-BMI_MIN));
+  const maxSpan=Math.max(spanSSI,spanADJ,spanDH,spanBMI), SCALE=100/maxSpan;
+  const refSSI=0, refADJ=0, refDH=0, refBMI=(B_BMI>=0?BMI_MIN:BMI_MAX);
+  let s={ssi:0,adj:0,dh:0,bmi:28};
+  function setSSI(v){s.ssi=v;document.getElementById('ssi-no').setAttribute('aria-pressed',v===0);document.getElementById('ssi-yes').setAttribute('aria-pressed',v===1);update();}
+  function setADJ(v){s.adj=v;document.getElementById('adj-no').setAttribute('aria-pressed',v===0);document.getElementById('adj-yes').setAttribute('aria-pressed',v===1);update();}
+  function setDH(v){s.dh=v;document.getElementById('dh-no').setAttribute('aria-pressed',v===0);document.getElementById('dh-yes').setAttribute('aria-pressed',v===1);update();}
+  function bmiCat(b){if(b<18.5)return'underweight';if(b<25)return'normal';if(b<30)return'overweight';if(b<35)return'obese I';if(b<40)return'obese II';return'obese III';}
+  const pSSI=v=>B_SSI*(v-refSSI)*SCALE, pADJ=v=>B_ADJ*(v-refADJ)*SCALE, pDH=v=>B_DH*(v-refDH)*SCALE, pBMI=v=>B_BMI*(v-refBMI)*SCALE;
+  function update(){
+    s.bmi=parseFloat(document.getElementById('bmi').value);
+    const a=pSSI(s.ssi),b=pADJ(s.adj),c=pDH(s.dh),d=pBMI(s.bmi), total=a+b+c+d;
+    const lp=B0+B_SSI*s.ssi+B_ADJ*s.adj+B_DH*s.dh+B_BMI*s.bmi, risk=1/(1+Math.exp(-lp)), rp=risk*100;
+    document.getElementById('bmi-val').textContent=s.bmi.toFixed(s.bmi%1?1:0);
+    document.getElementById('bmi-cat').textContent=bmiCat(s.bmi);
+    document.getElementById('pts-ssi').textContent=Math.round(a)+' pts';
+    document.getElementById('pts-adj').textContent=Math.round(b)+' pts';
+    document.getElementById('pts-dh').textContent=Math.round(c)+' pts';
+    document.getElementById('pts-bmi').textContent=Math.round(d)+' pts';
+    document.getElementById('risk').textContent=rp.toFixed(0);
+    document.getElementById('fill').style.width=Math.min(rp,100)+'%';
+    document.getElementById('bd-ssi').textContent=Math.round(a);
+    document.getElementById('bd-adj').textContent=Math.round(b);
+    document.getElementById('bd-dh').textContent=Math.round(c);
+    document.getElementById('bd-bmi').textContent=Math.round(d);
+    document.getElementById('bd-total').textContent=Math.round(total);
+    let band,col; if(rp<15){band='low';col='#3d6d97';}else if(rp<40){band='moderate';col='#8a7d3d';}else{band='elevated';col='#c96a52';}
+    const bd=document.getElementById('band');bd.textContent='— '+band;bd.style.color=col;
+  }
+  update();
+</script>
+</body>
+</html>
